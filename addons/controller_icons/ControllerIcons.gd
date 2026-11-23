@@ -124,11 +124,7 @@ func _ready():
 		Mapper = _settings.custom_mapper.new()
 	if _settings.custom_file_extension and not _settings.custom_file_extension.is_empty():
 		_base_extension = _settings.custom_file_extension
-	match _settings.mouse_profile:
-		ControllerSettings.MouseProfiles.TRACKPAD:
-			_trackpad_active = true
-		ControllerSettings.MouseProfiles.AUTO:
-			_trackpad_active = OS.get_name() == "macOS"
+	_apply_mouse_profile()
 	# Wait a frame to give a chance for the app to initialize
 	await get_tree().process_frame
 	# Set input type to what's likely being used currently
@@ -225,6 +221,25 @@ func get_last_input_type() -> InputType:
 ## [code]MOUSE[/code] or [code]TRACKPAD[/code] (never [code]AUTO[/code]).
 func get_mouse_profile() -> ControllerSettings.MouseProfiles:
 	return ControllerSettings.MouseProfiles.TRACKPAD if _trackpad_active else ControllerSettings.MouseProfiles.MOUSE
+
+## Sets the mouse profile at runtime ([code]MOUSE[/code], [code]TRACKPAD[/code]
+## or [code]AUTO[/code]) and refreshes all icons. [code]AUTO[/code] starts
+## as trackpad on macOS and as mouse elsewhere, as at startup.
+func set_mouse_profile(profile: ControllerSettings.MouseProfiles) -> void:
+	if not _settings:
+		_settings = ControllerSettings.new()
+	_settings.mouse_profile = profile
+	_apply_mouse_profile()
+	refresh()
+
+func _apply_mouse_profile() -> void:
+	match _settings.mouse_profile:
+		ControllerSettings.MouseProfiles.TRACKPAD:
+			_trackpad_active = true
+		ControllerSettings.MouseProfiles.AUTO:
+			_trackpad_active = OS.get_name() == "macOS"
+		_:
+			_trackpad_active = false
 
 func parse_path(path: String, input_type = _last_input_type, last_controller = _last_controller, forced_controller_icon_style = ControllerSettings.Devices.NONE) -> Texture:
 	if typeof(input_type) == TYPE_NIL:
